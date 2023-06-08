@@ -1,12 +1,19 @@
-const int MargeIn = 9;
-const int HomerIn = 8;
-const int BartIn = 7;
-const int LisaIn = 6;
+// Change these pins to define whatever pins on the Arduino you want to use for inputs and outputs.
+const int PlayerOneIn = 9;
+const int PlayerTwoIn = 8;
+const int PlayerThreeIn = 7;
+const int PlayerFourIn = 6;
 
-const int MargeOut = 10;
-const int HomerOut = 11;
-const int BartOut = 12;
-const int LisaOut = 13;
+const int PlayerOneOut = 10;
+const int PlayerTwoOut = 11;
+const int PlayerThreeOut = 12;
+const int PlayerFourOut = 13;
+
+// Enter whatever time in miliseconds that you want to disable the button for after it's pressed.
+const unsigned int disableTime = 8000;
+
+// The amount of time in miliseconds the button will register as pressed
+const unsigned int outputTime = 8000;
 
 const unsigned long MAX_LONG = 0 - 1;
 
@@ -70,7 +77,7 @@ void ControlledPin::Update(int elapsedTime)
     case StateIgnoringInputs:
       // Now just sit in a state for some time and don't register them pressing the button again.
       _timer += elapsedTime;
-      if(_timer >= 8000)
+      if(_timer >= disableTime)
       {
         _state = StateWaitingForInput;
         _timer = 0;
@@ -81,12 +88,12 @@ void ControlledPin::Update(int elapsedTime)
   }
 }
 
-ControlledPin Bart(MargeIn, MargeOut);
-ControlledPin Homer(HomerIn, HomerOut);
-ControlledPin Marge(BartIn, BartOut);
-ControlledPin Lisa(LisaIn, LisaOut);
+ControlledPin PlayerOne(PlayerOneIn, PlayerOneOut);
+ControlledPin PlayerTwo(PlayerTwoIn, PlayerTwoOut);
+ControlledPin PlayerThree(PlayerThreeIn, PlayerThreeOut);
+ControlledPin PlayerFour(PlayerFourIn, PlayerFourOut);
 
-ControlledPin pins[] = { Bart, Homer, Marge, Lisa };
+ControlledPin pins[] = { PlayerOne, PlayerTwo, PlayerThree, PlayerFour };
 
 unsigned long previousMillis = 0;
 unsigned long elapsedTime = 0;
