@@ -12,14 +12,11 @@ const int PlayerFourOut = 13;
 // Enter whatever time in miliseconds that you want to disable the button for after it's pressed.
 const unsigned int disableTime = 8000;
 
-// The amount of time in miliseconds the button will register as pressed
-const unsigned int outputTime = 8000;
-
 const unsigned long MAX_LONG = 0 - 1;
 
-const int StateWaitingForInput = 1;
-const int StateHoldingOutput = 2;
-const int StateIgnoringInputs = 3;
+const int StateWaitingForButtonPress = 1;
+const int StateButtonPressed = 2;
+const int StateIgnoringButtonPress = 3;
 
 class ControlledPin
 {
@@ -38,7 +35,7 @@ ControlledPin::ControlledPin(int input, int output)
 {
   _inputPin = input;
   _outputPin = output;
-  _state = StateWaitingForInput;
+  _state = StateWaitingForButtonPress;
   _timer = 0;
 }
 
@@ -50,36 +47,38 @@ void ControlledPin::Setup()
 
 void ControlledPin::Update(int elapsedTime) 
 {
+
+  int input = digitalRead(_inputPin);
+
   switch (_state) {
-    case StateWaitingForInput:
+    case StateWaitingForButtonPress:
         // Wait for them to press the coin in button.
-        int input = digitalRead(_inputPin);
         if(input == HIGH)
         {
-          _state = StateHoldingOutput;
-          _timer = 0;
+          // They pressed it! Set the output HIGH and wait for them to release it.
+          _state = StateButtonPressed;
+          digitalWrite(_outputPin, HIGH);
+          
+          // Sleep for a little to account for any bounce from the button.
+          delay(20);
         }
       break;
-    case StateHoldingOutput:
-      // They pressed it! Now hold high on the output in for a short time to simulate a coin going in.
-      _timer += elapsedTime;
-      if(_timer < 100)
+    case StateButtonPressed:
+      // The button is currently down, keep HIGH on the output pin until they release the button.
+      if(input == LOW)
       {
-        digitalWrite(_outputPin, HIGH);
-      }
-      else
-      {
+        // They released it! Set the output LOW and disable the button for a period.
         digitalWrite(_outputPin, LOW);
-        _state = StateIgnoringInputs;
+        _state = StateIgnoringButtonPress;
         _timer = 0;
       }
       break;
-    case StateIgnoringInputs:
-      // Now just sit in a state for some time and don't register them pressing the button again.
+    case StateIgnoringButtonPress:
+      // Do nothing until the timer is up, then we'll read inputs again.
       _timer += elapsedTime;
       if(_timer >= disableTime)
       {
-        _state = StateWaitingForInput;
+        _state = StateWaitingForButtonPress;
         _timer = 0;
       }
       break;
