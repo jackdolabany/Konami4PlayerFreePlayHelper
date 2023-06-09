@@ -14,9 +14,12 @@ const unsigned int disableTime = 8000;
 
 const unsigned long MAX_LONG = 0 - 1;
 
-const int StateWaitingForButtonPress = 1;
-const int StateButtonPressed = 2;
-const int StateIgnoringButtonPress = 3;
+enum State
+{
+  WaitingForButtonPress,
+  ButtonPressed,
+  IgnoringButtonPress
+};
 
 class ControlledPin
 {
@@ -27,7 +30,7 @@ class ControlledPin
   private:
     int _inputPin;
     int _outputPin;
-    int _state;
+    State _state;
     unsigned long _timer;
 };
 
@@ -35,7 +38,7 @@ ControlledPin::ControlledPin(int input, int output)
 {
   _inputPin = input;
   _outputPin = output;
-  _state = StateWaitingForButtonPress;
+  _state = WaitingForButtonPress;
   _timer = 0;
 }
 
@@ -51,34 +54,34 @@ void ControlledPin::Update(int elapsedTime)
   int input = digitalRead(_inputPin);
 
   switch (_state) {
-    case StateWaitingForButtonPress:
+    case WaitingForButtonPress:
         // Wait for them to press the coin in button.
         if(input == HIGH)
         {
           // They pressed it! Set the output HIGH and wait for them to release it.
-          _state = StateButtonPressed;
+          _state = ButtonPressed;
           digitalWrite(_outputPin, HIGH);
           
           // Sleep for a little to account for any bounce from the button.
           delay(20);
         }
       break;
-    case StateButtonPressed:
+    case ButtonPressed:
       // The button is currently down, keep HIGH on the output pin until they release the button.
       if(input == LOW)
       {
         // They released it! Set the output LOW and disable the button for a period.
         digitalWrite(_outputPin, LOW);
-        _state = StateIgnoringButtonPress;
+        _state = IgnoringButtonPress;
         _timer = 0;
       }
       break;
-    case StateIgnoringButtonPress:
+    case IgnoringButtonPress:
       // Do nothing until the timer is up, then we'll read inputs again.
       _timer += elapsedTime;
       if(_timer >= disableTime)
       {
-        _state = StateWaitingForButtonPress;
+        _state = WaitingForButtonPress;
         _timer = 0;
       }
       break;
