@@ -10,7 +10,7 @@ const int PlayerThreeOut = 12;
 const int PlayerFourOut = 13;
 
 // Enter whatever time in miliseconds that you want to disable the button for after it's pressed.
-const unsigned int disableTime = 8000;
+const unsigned long DISABLE_TIME = 8000;
 
 const unsigned long MAX_LONG = 0 - 1;
 
@@ -26,12 +26,12 @@ class ControlledPin
   public: 
     ControlledPin::ControlledPin(int input, int output);
     void Setup();
-    void Update(int elapsedTime);
+    void Update();
   private:
     int _inputPin;
     int _outputPin;
     State _state;
-    unsigned long _timer;
+    unsigned long _expirationMillis;
 };
 
 ControlledPin::ControlledPin(int input, int output)
@@ -39,7 +39,7 @@ ControlledPin::ControlledPin(int input, int output)
   _inputPin = input;
   _outputPin = output;
   _state = WaitingForButtonPress;
-  _timer = 0;
+  _expirationMillis = 0;
 }
 
 void ControlledPin::Setup()
@@ -48,21 +48,23 @@ void ControlledPin::Setup()
   pinMode(_outputPin, OUTPUT);
 }
 
-void ControlledPin::Update(int elapsedTime) 
+void ControlledPin::Update() 
 {
 
   int input = digitalRead(_inputPin);
 
-  switch (_state) {
+  switch (_state) 
+  {
     case WaitingForButtonPress:
         // Wait for them to press the coin in button.
+        digitalWrite(PlayerFourOut, LOW);
         if(input == HIGH)
         {
           // They pressed it! Set the output HIGH and wait for them to release it.
           _state = ButtonPressed;
           digitalWrite(_outputPin, HIGH);
           
-          // Sleep for a little to account for any bounce from the button.
+          // Sleep with the output high for a little to account for any bounce from the button.
           delay(20);
         }
       break;
@@ -73,16 +75,14 @@ void ControlledPin::Update(int elapsedTime)
         // They released it! Set the output LOW and disable the button for a period.
         digitalWrite(_outputPin, LOW);
         _state = IgnoringButtonPress;
-        _timer = 0;
+        _expirationMillis = millis() + DISABLE_TIME;
       }
       break;
     case IgnoringButtonPress:
       // Do nothing until the timer is up, then we'll read inputs again.
-      _timer += elapsedTime;
-      if(_timer >= disableTime)
+      if(millis() >= _expirationMillis)
       {
         _state = WaitingForButtonPress;
-        _timer = 0;
       }
       break;
     default:
@@ -97,9 +97,6 @@ ControlledPin PlayerFour(PlayerFourIn, PlayerFourOut);
 
 ControlledPin pins[] = { PlayerOne, PlayerTwo, PlayerThree, PlayerFour };
 
-unsigned long previousMillis = 0;
-unsigned long elapsedTime = 0;
-
 void setup() 
 {
   for(int i = 0; i <= 3; i++)
@@ -110,22 +107,9 @@ void setup()
 
 void loop() 
 {
-  if (millis() >= previousMillis)
-  {
-    elapsedTime = millis() - previousMillis;
-  }
-  else
-  {
-    // Deal with a weird edge case that the timer might have overflowed.
-    // This would only happen after like 2 days of running anyway.
-    elapsedTime = MAX_LONG - previousMillis + millis();
-  }
-
   for(int i = 0; i <= 3; i++)
   {
-    pins[i].Update(elapsedTime);
+    pins[i].Update();
   }
-
-  previousMillis = millis();
 
 }
