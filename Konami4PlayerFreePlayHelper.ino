@@ -46,34 +46,37 @@ void ControlledPin::Setup()
 {
   pinMode(_inputPin, INPUT);
   pinMode(_outputPin, OUTPUT);
+
+  // Default is to write HIGH. Buttin presses are LOW.
+  digitalWrite(_outputPin, HIGH);
 }
 
 void ControlledPin::Update() 
 {
-
+  // This is designed for JAMMA buttons so HIGH 5v is up and LOW 0v is pressed.
   int input = digitalRead(_inputPin);
 
   switch (_state) 
   {
     case WaitingForButtonPress:
         // Wait for them to press the coin in button.
-        digitalWrite(PlayerFourOut, LOW);
-        if(input == HIGH)
+        
+        if(input == LOW)
         {
-          // They pressed it! Set the output HIGH and wait for them to release it.
+          // They pressed it! Set the output LOW and wait for them to release it.
           _state = ButtonPressed;
-          digitalWrite(_outputPin, HIGH);
+          digitalWrite(_outputPin, LOW);
           
-          // Sleep with the output high for a little to account for any bounce from the button.
+          // Sleep with the output low for a little to account for any bounce from the button.
           delay(20);
         }
       break;
     case ButtonPressed:
-      // The button is currently down, keep HIGH on the output pin until they release the button.
-      if(input == LOW)
+      // The button is currently down, keep LOW on the output pin until they release the button.
+      if(input == HIGH)
       {
-        // They released it! Set the output LOW and disable the button for a period.
-        digitalWrite(_outputPin, LOW);
+        // They released it! Set the output HIGH and disable the button for a period.
+        digitalWrite(_outputPin, HIGH);
         _state = IgnoringButtonPress;
         _expirationMillis = millis() + DISABLE_TIME;
       }
